@@ -1,0 +1,79 @@
+﻿@page "/login"
+@using System.ComponentModel.DataAnnotations
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<div class="flex justify-center items-center min-h-screen bg-gray-100">
+    <MudPaper Class="w-full max-w-md p-10 rounded-3xl shadow-xl bg-white">
+        <MudStack Spacing="4">
+            <!-- Header -->
+            <MudText Typo="Typo.h3" Align="Align.Center" Class="font-bold text-gray-800">
+                Login
+            </MudText>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="text-gray-500">
+                Enter your credentials to continue
+            </MudText>
+
+            <!-- Login Form -->
+            <EditForm Model="@loginModel" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+
+                <MudStack Spacing="3" Class="mt-4">
+                    <MudTextField @bind-Value="loginModel.Email"
+                                  Label="Email Address"
+                                  For="@(() => loginModel.Email)"
+                                  Required="true"
+                                  RequiredError="Email is required"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Dense" />
+
+                    <MudTextField @bind-Value="loginModel.Password"
+                                  Label="Password"
+                                  InputType="InputType.Password"
+                                  For="@(() => loginModel.Password)"
+                                  Required="true"
+                                  RequiredError="Password is required"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Dense" />
+                </MudStack>
+
+                <!-- Submit Button -->
+                <MudStack Spacing="2" Class="mt-6">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               ButtonType="ButtonType.Submit"
+                               FullWidth="true"
+                               Size="Size.Large"
+                               Class="hover:bg-blue-700 transition-colors">
+                        Login
+                    </MudButton>
+
+                    <MudText Typo="Typo.body2" Align="Align.Center" Class="text-gray-500 mt-1">
+                        Don’t have an account?
+                        <MudLink Href="/register" Color="Color.Primary" Class="font-medium">Register</MudLink>
+                    </MudText>
+                </MudStack>
+            </EditForm>
+        </MudStack>
+    </MudPaper>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+
+    private void HandleValidSubmit()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    public class LoginModel
+    {
+        [Required, EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        public string Password { get; set; } = string.Empty;
+    }
+}

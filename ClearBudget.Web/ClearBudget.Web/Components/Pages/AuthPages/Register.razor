@@ -1,0 +1,118 @@
+﻿@page "/register"
+@using System.ComponentModel.DataAnnotations
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<div class="flex justify-center items-center min-h-screen bg-gray-100">
+    <MudPaper Class="w-full max-w-md p-10 rounded-3xl shadow-xl bg-white">
+        <MudStack Spacing="4">
+            <!-- Header -->
+            <MudText Typo="Typo.h3" Align="Align.Center" Class="font-bold text-gray-800">
+                Create Account
+            </MudText>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="text-gray-500">
+                Sign up to start your journey
+            </MudText>
+
+            <!-- Registration Form -->
+            <EditForm Model="@registerModel" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+                <MudStack Spacing="3" Class="mt-4">
+
+                    <MudTextField @bind-Value="registerModel.FirstName"
+                                  Label="First Name"
+                                  For="@(() => registerModel.FirstName)"
+                                  Required="true"
+                                  RequiredError="First name is required"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Dense" />
+
+                    <MudTextField @bind-Value="registerModel.LastName"
+                                  Label="Last Name"
+                                  For="@(() => registerModel.LastName)"
+                                  Required="true"
+                                  RequiredError="Last name is required"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Dense" />
+
+                    <MudTextField @bind-Value="registerModel.EmailAddress"
+                                  Label="Email Address"
+                                  For="@(() => registerModel.EmailAddress)"
+                                  Required="true"
+                                  RequiredError="Email is required"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Dense" />
+
+                    <MudTextField @bind-Value="registerModel.Password"
+                                  Label="Password"
+                                  InputType="InputType.Password"
+                                  For="@(() => registerModel.Password)"
+                                  Required="true"
+                                  RequiredError="Password is required"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Dense" />
+
+                    <MudTextField @bind-Value="registerModel.ConfirmPassword"
+                                  Label="Confirm Password"
+                                  InputType="InputType.Password"
+                                  For="@(() => registerModel.ConfirmPassword)"
+                                  Required="true"
+                                  RequiredError="Please confirm your password"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Dense" />
+                </MudStack>
+
+                <!-- Submit Button -->
+                <MudStack Spacing="2" Class="mt-6">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               ButtonType="ButtonType.Submit"
+                               FullWidth="true"
+                               Size="Size.Large"
+                               Class="hover:bg-blue-700 transition-colors">
+                        Register
+                    </MudButton>
+
+                    <MudText Typo="Typo.body2" Align="Align.Center" Class="text-gray-500 mt-1">
+                        Already have an account?
+                        <MudLink Href="/login" Color="Color.Primary" Class="font-medium">Login</MudLink>
+                    </MudText>
+                </MudStack>
+            </EditForm>
+        </MudStack>
+    </MudPaper>
+</div>
+
+@code {
+    private RegisterModel registerModel = new();
+
+    private void HandleValidSubmit()
+    {
+        Snackbar.Add("Registration successful!", Severity.Success);
+    }
+
+    public class RegisterModel
+    {
+        [Required(ErrorMessage = "First name is required")]
+        public string FirstName { get; set; }
+
+        [Required(ErrorMessage = "Last name is required")]
+        public string LastName { get; set; }
+
+        [Required, EmailAddress(ErrorMessage = "Invalid email")]
+        public string EmailAddress { get; set; }
+
+        [Required, MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
+        public string Password { get; set; }
+
+        [Required(ErrorMessage = "Please confirm your password")]
+        public string ConfirmPassword { get; set; }
+
+        public bool SignInUserAfterCreation { get; set; }
+    }
+}
