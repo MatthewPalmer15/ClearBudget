@@ -6,7 +6,6 @@ using ClearBudget.Infrastructure.Services.Csv;
 using ClearBudget.Infrastructure.Services.Dapper;
 using ClearBudget.Infrastructure.Services.Hash;
 using ClearBudget.Infrastructure.Services.Serialization;
-using ClearBudget.Infrastructure.Services.Session;
 using Mapster;
 using MapsterMapper;
 using MediatR;
@@ -34,13 +33,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IXmlSerializer, XmlSerializer>();
 
         services.AddScoped<ICookieManager, CookieManager>();
-        services.AddScoped<ISessionManager, SessionManager>();
-        services.AddSession(options =>
-        {
-            options.IdleTimeout = TimeSpan.FromMinutes(60);
-            options.Cookie.HttpOnly = true;
-            options.Cookie.IsEssential = true;
-        });
         services.AddScoped<IHashService, HashService>();
 
 

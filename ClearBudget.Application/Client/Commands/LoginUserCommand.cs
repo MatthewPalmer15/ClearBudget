@@ -44,7 +44,7 @@ public class LoginUserCommand : IRequest<BaseResponse>
             context.ClientUsers.Update(user);
             await context.SaveChangesAsync(cancellationToken);
 
-            await currentUserService.SignInAsync(user, cancellationToken);
+            await currentUserService.SignInAsync(user);
             return BaseResponse.Succeeded();
         }
 

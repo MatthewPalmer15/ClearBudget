@@ -7,7 +7,7 @@ namespace ClearBudget.Application.Client.Queries;
 
 public class GetClientUserClaimsQuery : IRequest<GetClientUserClaimsResult>
 {
-    public Guid Id { get; set; }
+    public Guid ClientUserId { get; set; }
 
     internal class Handler(IDbContext context) : IRequestHandler<GetClientUserClaimsQuery, GetClientUserClaimsResult>
     {
@@ -19,7 +19,7 @@ public class GetClientUserClaimsQuery : IRequest<GetClientUserClaimsResult>
                                     join cu in context.ClientUsers on cur.ClientUserId equals cu.Id
                                     where !cur.Deleted
                                           && !cu.Deleted
-                                          && cu.Id == request.Id
+                                          && cu.Id == request.ClientUserId
                                     select new GetClientUserClaimsResult.Claim
                                     {
                                         Type = cur.Type,
@@ -39,7 +39,7 @@ public class GetClientUserClaimsQuery : IRequest<GetClientUserClaimsResult>
                                           && !cr.Deleted
                                           && !cur.Deleted
                                           && !cu.Deleted
-                                          && cu.Id == request.Id
+                                          && cu.Id == request.ClientUserId
                                           && !existingClaimTypes.Contains(crc.Type)
                                     select new GetClientUserClaimsResult.Claim
                                     {

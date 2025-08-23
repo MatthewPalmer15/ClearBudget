@@ -11,7 +11,7 @@ public class LogoutUserCommand : IRequest<BaseResponse>
         public async Task<BaseResponse> Handle(LogoutUserCommand request,
             CancellationToken cancellationToken = default)
         {
-            await currentUserService.SignOutAsync(false, cancellationToken);
+            await currentUserService.SignOutAsync();
             return BaseResponse.Succeeded();
         }
     }

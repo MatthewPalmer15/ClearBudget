@@ -48,7 +48,7 @@ public class RegisterUserCommand : IRequest<BaseResponse>
             await context.SaveChangesAsync(cancellationToken);
 
             if (request.SignInUserAfterCreation)
-                await currentUserService.SignInAsync(clientUser, cancellationToken);
+                await currentUserService.SignInAsync(clientUser);
 
             return BaseResponse.Succeeded();
         }

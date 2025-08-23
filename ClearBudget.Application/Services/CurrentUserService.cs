@@ -1,10 +1,9 @@
-﻿using ClearBudget.Application.Client.Models;
-using ClearBudget.Application.Client.Queries;
+﻿using ClearBudget.Application.Client.Queries;
 using ClearBudget.Database.Entities.Client;
-using ClearBudget.Infrastructure.Services.Session;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
@@ -15,53 +14,46 @@ namespace ClearBudget.Application.Services;
 
 public interface ICurrentUserService
 {
-    ClientUser? Get();
-    bool IsAuthenticated();
+    Task<ClientUser?> GetAsync();
+    Task<ClaimsPrincipal?> GetPrincipalAsync();
+    Task<bool> IsAuthenticatedAsync();
     string? GetIpAddress();
-    Task SignInAsync(ClientUser clientUser, CancellationToken cancellationToken = default);
-    Task SignOutAsync(bool clearSession = false, CancellationToken cancellationToken = default);
-    Task<bool> HasClaimAsync(string type, string value, CancellationToken cancellationToken = default);
+    Task<bool> SignInAsync(ClientUser clientUser);
+    Task SignOutAsync();
+    Task<bool> HasClaimAsync(string type, string value);
+    Task<bool> IsInRoleAsync(string name);
 }
 
-public class CurrentUserService(
-    IMediator mediator,
-    ISessionManager sessionManager,
+public class CurrentUserService(IMediator mediator,
     ICookieManager cookieManager,
-    IHttpContextAccessor httpContextAccessor) : ICurrentUserService
+    IHttpContextAccessor httpContextAccessor,
+    HttpClient httpClient,
+    AuthenticationStateProvider authenticationStateProvider) : ICurrentUserService
 {
-    public ClientUser? Get()
+
+    public async Task<ClientUser?> GetAsync()
     {
+        var principal = await authenticationStateProvider.GetAuthenticationStateAsync();
 
-        var user = sessionManager.Get<ClientUser>("CurrentUser");
-        if (user != null)
-        {
-            var authenticationToken = httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "AuthenticationToken")?.Value;
-            //var authenticationToken = cookieManager.Get("CurrentUser_AuthenticationToken");
-            if (string.IsNullOrWhiteSpace(authenticationToken) || user.AuthenticationToken == authenticationToken)
-                return user;
-        }
+        var user = ToClientUser(principal.User);
+        if (user == null) return null;
 
-        var claimsPrincipal = httpContextAccessor.HttpContext?.User;
-        if (claimsPrincipal?.Identity?.IsAuthenticated ?? false)
-        {
-            user = new ClientUser
-            {
-                AuthenticationToken = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == "AuthenticationToken")?.Value,
-                Forename = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == "FirstName")?.Value ?? string.Empty,
-                Surname = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == "LastName")?.Value ?? string.Empty,
-                EmailAddress = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == "EmailAddress")?.Value ?? string.Empty,
-            };
-
-            sessionManager.Add("CurrentUser", user);
-            return user;
-        }
-
-        return null;
+        var authenticationToken = cookieManager.Get("AuthenticationToken");
+        if (!string.IsNullOrWhiteSpace(authenticationToken) && user.AuthenticationToken != authenticationToken) return null;
+        return user;
     }
 
-    public bool IsAuthenticated()
+    public async Task<ClaimsPrincipal?> GetPrincipalAsync()
     {
-        return httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+        var principal = await authenticationStateProvider.GetAuthenticationStateAsync();
+        if (!(principal.User?.Identity?.IsAuthenticated ?? false)) return null;
+        return principal.User;
+    }
+
+    public async Task<bool> IsAuthenticatedAsync()
+    {
+        var principal = await authenticationStateProvider.GetAuthenticationStateAsync();
+        return !(principal.User?.Identity?.IsAuthenticated ?? false);
     }
 
     public string? GetIpAddress()
@@ -69,38 +61,37 @@ public class CurrentUserService(
         return httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
     }
 
-    public async Task SignInAsync(ClientUser clientUser, CancellationToken cancellationToken = default)
+    public async Task<bool> SignInAsync(ClientUser clientUser)
     {
-        if (clientUser == null || string.IsNullOrWhiteSpace(clientUser.AuthenticationToken))
-            return;
+        if (httpContextAccessor?.HttpContext is null) return false;
+        if (clientUser == null || string.IsNullOrWhiteSpace(clientUser.AuthenticationToken)) return false;
 
-        // var claims = new List<Claim> {
-        //     new(ClaimTypes.Name, clientUser.AuthenticationToken, ClaimValueTypes.String),
-        //     new(ClaimTypes.Email, clientUser.EmailAddress, ClaimValueTypes.Email),
-        //     new Claim("IsAppUser", ((httpContextAccessor.HttpContext?.Request?.Query["utm_medium"].ToString() ?? "") == "PWA").ToString()),
-        // };
+        var claimsResult = await mediator.Send(new GetClientUserClaimsQuery { ClientUserId = clientUser.Id });
+        var rolesResult = await mediator.Send(new GetClientUserRolesQuery { ClientUserId = clientUser.Id });
 
-        cookieManager.Add("CurrentUser_AuthenticationToken", clientUser.AuthenticationToken, TimeSpan.FromDays(30),
-            SameSiteMode.Strict, true);
-        sessionManager.Add("CurrentUser", clientUser);
+        var userIdentity = new ClaimsIdentity("CurrentUser_Core", ClaimTypes.Name, ClaimTypes.Role);
+        userIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, clientUser.Id.ToString()));
+        userIdentity.AddClaim(new Claim(ClaimTypes.Name, clientUser.EmailAddress));
+        userIdentity.AddClaim(new Claim(ClaimTypes.Email, clientUser.EmailAddress));
+        userIdentity.AddClaim(new Claim("AuthenticationToken", clientUser.AuthenticationToken));
+        userIdentity.AddClaim(new Claim("FirstName", clientUser.Forename));
+        userIdentity.AddClaim(new Claim("LastName", clientUser.Surname));
 
-        var userIdentity = new ClaimsIdentity("CurrentUser_Login");
-        userIdentity.AddClaim(new Claim("Id", clientUser.Id.ToString()));
-        userIdentity.AddClaim(new Claim("EmailAddress", clientUser.EmailAddress));
-        userIdentity.AddClaim(new Claim("IsAppUser",
-            ((httpContextAccessor.HttpContext?.Request?.Query["utm_medium"].ToString() ?? "") == "PWA").ToString()));
+        var authIdentity = new ClaimsIdentity("CurrentUser_Authentication", ClaimTypes.Name, ClaimTypes.Role);
+        foreach (var claim in claimsResult.Claims.DistinctBy(x => x.Type))
+        {
+            authIdentity.AddClaim(new Claim(claim.Type, claim.Value));
+        }
 
-        // if (clientUser.Roles != null)
-        // {
-        //     foreach (var role in clientUser.Roles)
-        //         userIdentity.AddClaim(new Claim(ClaimTypes.Role, role));
-        // }
+        foreach (var role in rolesResult.Roles.DistinctBy(x => x.Title))
+        {
+            authIdentity.AddClaim(new Claim(ClaimTypes.Role, role.Title));
+        }
 
+        var userPrincipal = new ClaimsPrincipal([userIdentity, authIdentity]);
 
-        var userPrincipal = new ClaimsPrincipal(userIdentity);
-
-        if (httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true)
-            await SignOutAsync(cancellationToken: cancellationToken);
+        if (httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false)
+            await SignOutAsync();
 
         await httpContextAccessor.HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
@@ -112,39 +103,48 @@ public class CurrentUserService(
                 AllowRefresh = true,
                 IssuedUtc = DateTime.UtcNow
             });
+
+        cookieManager.Add("CurrentUser_AuthenticationToken", clientUser.AuthenticationToken, TimeSpan.FromDays(30), SameSiteMode.Strict, true);
+        return true;
     }
 
-    public async Task SignOutAsync(bool clearSession = false, CancellationToken cancellationToken = default)
+    public async Task SignOutAsync()
     {
         cookieManager.Delete("CurrentUser_AuthenticationToken");
-        sessionManager.Remove("CurrentUser");
         await httpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-        if (clearSession)
-            sessionManager.Clear();
     }
 
-    public async Task<bool> HasClaimAsync(string type, string value, CancellationToken cancellationToken = default)
+    public async Task<bool> HasClaimAsync(string type, string value)
     {
-        var currentUser = Get();
-        if (currentUser == null)
-            return false;
-
-        var claims = new List<GetClientUserClaimsResult.Claim>();
-        var claimSessionExpiry = sessionManager.Get<DateTime>("CurrentUser_Claims_Expiry");
-
-        if (sessionManager.Exists("CurrentUser_Claims") && claimSessionExpiry > DateTime.Now)
-        {
-            claims = sessionManager.Get<List<GetClientUserClaimsResult.Claim>>("CurrentUser_Claims");
-        }
-        else
-        {
-            claims = (await mediator.Send(new GetClientUserClaimsQuery { Id = currentUser.Id }, cancellationToken)).Claims;
-            sessionManager.Add("CurrentUser_Claims", claims);
-            sessionManager.Add("CurrentUser_Claims_Expiry", DateTime.Now.AddMinutes(5));
-        }
-
-        return claims?.Any(x => x.Type.Equals(type, StringComparison.CurrentCultureIgnoreCase) && x.Value.Equals(value, StringComparison.CurrentCultureIgnoreCase)) ?? false;
-
+        var principal = await authenticationStateProvider.GetAuthenticationStateAsync();
+        if (principal.User.Identity?.IsAuthenticated ?? false) return false;
+        return principal.User.HasClaim(type, value);
     }
+    public async Task<bool> IsInRoleAsync(string name)
+    {
+        var principal = await authenticationStateProvider.GetAuthenticationStateAsync();
+        if (principal.User.Identity?.IsAuthenticated ?? false) return false;
+        return principal.User.IsInRole(name);
+    }
+
+    private static ClientUser? ToClientUser(ClaimsPrincipal? p)
+    {
+        if (p?.Identity?.IsAuthenticated != true)
+            return null;
+
+        // You stored Id as ClaimTypes.NameIdentifier
+        var id = p.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(id, out var gid))
+            return null;
+
+        return new ClientUser
+        {
+            Id = gid,
+            EmailAddress = p.FindFirst(ClaimTypes.Email)?.Value ?? p.FindFirst(ClaimTypes.Name)?.Value ?? "",
+            Forename = p.FindFirst("FirstName")?.Value ?? "",
+            Surname = p.FindFirst("LastName")?.Value ?? "",
+            AuthenticationToken = p.FindFirst("AuthenticationToken")?.Value
+        };
+    }
+
 }
