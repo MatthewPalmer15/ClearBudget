@@ -25,6 +25,16 @@ builder.Services.AddScoped(sp =>
     var nav = sp.GetRequiredService<NavigationManager>();
     return new HttpClient { BaseAddress = new Uri(nav.BaseUri) };
 });
+builder.Services.AddAuthentication()
+    .AddCookie("Cookies", options =>
+    {
+        options.LoginPath = "/login";
+        options.LogoutPath = "/logout";
+        options.AccessDeniedPath = "/forbidden";
+        options.SlidingExpiration = true;
+    });
+builder.Services.AddAuthorization();
+
 
 builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddMudServices();
@@ -53,6 +63,10 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 app.MapControllers();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()

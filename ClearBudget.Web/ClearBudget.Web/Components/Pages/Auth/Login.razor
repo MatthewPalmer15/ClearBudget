@@ -1,6 +1,6 @@
 ﻿@page "/login"
+@rendermode InteractiveServer
 @inherits CustomServerComponent
-@inject NavigationManager Navigation
 
 <div class="flex justify-center items-center min-h-screen bg-gray-100">
     <MudPaper Class="w-full max-w-md p-10 rounded-3xl shadow-xl bg-white">
@@ -14,23 +14,23 @@
             </MudText>
 
             <!-- Login Form -->
-            <EditForm Model="@loginModel" OnValidSubmit="HandleValidSubmit">
+            <EditForm Model="@_model" OnValidSubmit="OnLoginFormSubmit" FormName="LoginForm">
                 <DataAnnotationsValidator />
 
                 <MudStack Spacing="3" Class="mt-4">
-                    <MudTextField @bind-Value="loginModel.Email"
+                    <MudTextField @bind-Value="_model.EmailAddress"
                                   Label="Email Address"
-                                  For="@(() => loginModel.Email)"
+                                  For="@(() => _model.EmailAddress)"
                                   Required="true"
                                   RequiredError="Email is required"
                                   Variant="Variant.Outlined"
                                   FullWidth="true"
                                   Margin="Margin.Dense" />
 
-                    <MudTextField @bind-Value="loginModel.Password"
+                    <MudTextField @bind-Value="_model.Password"
                                   Label="Password"
                                   InputType="InputType.Password"
-                                  For="@(() => loginModel.Password)"
+                                  For="@(() => _model.Password)"
                                   Required="true"
                                   RequiredError="Password is required"
                                   Variant="Variant.Outlined"

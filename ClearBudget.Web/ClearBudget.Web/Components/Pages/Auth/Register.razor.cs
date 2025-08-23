@@ -10,7 +10,6 @@ public partial class Register : CustomServerComponent
     [Inject] public ISnackbar Snackbar { get; set; }
     [Inject] public NavigationManager NavigationManager { get; set; }
 
-
     private RegisterEditModel _model = new();
 
     private async Task OnRegisterFormSubmit()
@@ -50,7 +49,5 @@ public partial class Register : CustomServerComponent
 
         [Required(ErrorMessage = "Please confirm your password")]
         public string ConfirmPassword { get; set; }
-
-        public bool SignInUserAfterCreation { get; set; }
     }
 }

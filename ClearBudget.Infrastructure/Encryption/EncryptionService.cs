@@ -8,8 +8,9 @@ public class EncryptionService : IEncryptionService
 {
     public EncryptionService()
     {
-        var keyBytes = Encoding.UTF8.GetBytes("qN5Iu+oZ6e4Bz6sFv3Nz2WE+9m58ErpW8+CtNDGnqDQ=");
-        var ivBytes = Encoding.UTF8.GetBytes("vA+boKe69Tw+zM22FXTe2Q==");
+
+        var keyBytes = Convert.FromBase64String("qN5Iu+oZ6e4Bz6sFv3Nz2WE+9m58ErpW8+CtNDGnqDQ=");
+        var ivBytes = Convert.FromBase64String("vA+boKe69Tw+zM22FXTe2Q==");
 
         EncryptionProvider = new AesProvider(keyBytes, ivBytes);
     }
