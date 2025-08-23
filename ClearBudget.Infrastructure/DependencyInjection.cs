@@ -3,6 +3,7 @@ using ClearBudget.Infrastructure.MediatR.Pipelines;
 using ClearBudget.Infrastructure.Services.Caching;
 using ClearBudget.Infrastructure.Services.Cookie;
 using ClearBudget.Infrastructure.Services.Csv;
+using ClearBudget.Infrastructure.Services.Dapper;
 using ClearBudget.Infrastructure.Services.Hash;
 using ClearBudget.Infrastructure.Services.Serialization;
 using ClearBudget.Infrastructure.Services.Session;
@@ -47,6 +48,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton(config);
         services.AddScoped<IMapper, Mapper>();
+        services.AddScoped<IDapperContext, DapperContext>();
         return services;
     }
 }

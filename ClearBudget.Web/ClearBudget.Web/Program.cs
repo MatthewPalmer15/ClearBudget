@@ -5,6 +5,11 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+#if DEBUG
+builder.Configuration.AddJsonFile("appsettings.Debug.json", optional: true);
+#else
+builder.Configuration.AddJsonFile("appsettings.Release.json", optional: true);
+#endif
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
