@@ -3,6 +3,7 @@
     <PackageReference Include="CsvHelper" />
     <PackageReference Include="Dapper" />
     <PackageReference Include="FluentValidation" />
+    <PackageReference Include="MailKit" />
     <PackageReference Include="Mapster" />
     <PackageReference Include="MediatR" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Extensions" />

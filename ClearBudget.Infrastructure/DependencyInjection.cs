@@ -49,6 +49,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(config);
         services.AddScoped<IMapper, Mapper>();
         services.AddScoped<IDapperContext, DapperContext>();
+
+        // services.AddScoped<IEmailSender, EmailSender>(); TODO: NEED TO TEST BEFORE UNCOMMENTING
         return services;
     }
 }
