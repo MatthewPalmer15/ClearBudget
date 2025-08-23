@@ -2,6 +2,7 @@
 
 public class ClientUser : BaseEntity<Guid>
 {
+    public DateTime DateCreated { get; set; }
     public string Forename { get; set; }
     public string Surname { get; set; }
     public string EmailAddress { get; set; }

@@ -1,5 +1,6 @@
 ﻿using ClearBudget.Database.Entities.Client;
 using ClearBudget.Database.Entities.Settings;
+using ClearBudget.Database.Entities.Transactions;
 using ClearBudget.Database.Extensions;
 using ClearBudget.Infrastructure.Encryption;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,11 @@ public class ApplicationDbContext(IEncryptionService encryptionService, IConfigu
     public DbSet<ClientUserRole> ClientUserRoles { get; set; }
     public DbSet<ClientRole> ClientRoles { get; set; }
     public DbSet<ClientRoleClaim> ClientRoleClaims { get; set; }
+
+    public DbSet<Account> Accounts { get; set; }
+    public DbSet<AccountTransaction> AccountTransactions { get; set; }
+    public DbSet<AccountTransactionCategory> AccountTransactionCategories { get; set; }
+
     public DbSet<Setting> Settings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

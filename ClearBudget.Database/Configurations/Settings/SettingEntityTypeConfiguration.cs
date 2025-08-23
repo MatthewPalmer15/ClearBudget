@@ -9,14 +9,7 @@ public class SettingEntityTypeConfiguration : IEntityTypeConfiguration<Setting>
 {
     public void Configure(EntityTypeBuilder<Setting> builder)
     {
-        builder.ToTable("tbl_Settings");
-
-        builder.HasKey(x => x.Id);
-        builder.HasIndex(x => x.Id).IsUnique();
-
-        builder.Property(x => x.Id)
-            .ValueGeneratedOnAdd()
-            .IsRequired();
+        builder.ConfigureBaseProperties();
 
         builder.Property(x => x.Key)
             .HasMaxLength(100)
@@ -25,7 +18,5 @@ public class SettingEntityTypeConfiguration : IEntityTypeConfiguration<Setting>
         builder.Property(x => x.Value)
             .IsEncrypted()
             .IsRequired();
-
-        builder.HasQueryFilter(x => !x.Deleted);
     }
 }

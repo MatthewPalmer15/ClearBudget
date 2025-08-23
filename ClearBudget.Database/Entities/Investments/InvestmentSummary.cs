@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ClearBudget.Database.Entities.Finance.Investments
+﻿namespace ClearBudget.Database.Entities.Investments
 {
     public class InvestmentSummary
     {

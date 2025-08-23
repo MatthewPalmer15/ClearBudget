@@ -6,6 +6,8 @@ using ClearBudget.Infrastructure.Services.Csv;
 using ClearBudget.Infrastructure.Services.Hash;
 using ClearBudget.Infrastructure.Services.Serialization;
 using ClearBudget.Infrastructure.Services.Session;
+using Mapster;
+using MapsterMapper;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +41,12 @@ public static class ServiceCollectionExtensions
             options.Cookie.IsEssential = true;
         });
         services.AddScoped<IHashService, HashService>();
+
+
+        var config = TypeAdapterConfig.GlobalSettings;
+
+        services.AddSingleton(config);
+        services.AddScoped<IMapper, Mapper>();
         return services;
     }
 }

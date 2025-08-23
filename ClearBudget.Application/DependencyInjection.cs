@@ -14,6 +14,8 @@ public static class DependencyInjection
         services.AddDatabase();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+        // services.AddHostedService<RecurringTransactionsService>(); TODO: TEST THIS BEFORE ADDING INTO MAIN
         return services;
     }
 }
