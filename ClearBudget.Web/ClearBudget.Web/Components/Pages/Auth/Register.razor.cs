@@ -1,18 +1,40 @@
-﻿using MudBlazor;
+﻿using ClearBudget.Application.Client.Commands;
+using Microsoft.AspNetCore.Components;
+using MudBlazor;
 using System.ComponentModel.DataAnnotations;
 
 namespace ClearBudget.Web.Components.Pages.Auth;
 
 public partial class Register : CustomServerComponent
 {
-    private RegisterModel registerModel = new();
+    [Inject] public ISnackbar Snackbar { get; set; }
+    [Inject] public NavigationManager NavigationManager { get; set; }
 
-    private void HandleValidSubmit()
+
+    private RegisterEditModel _model = new();
+
+    private async Task OnRegisterFormSubmit()
     {
-        Snackbar.Add("Registration successful!", Severity.Success);
+        var response = await Mediator.Send(new RegisterUserCommand
+        {
+            FirstName = _model.FirstName,
+            LastName = _model.LastName,
+            EmailAddress = _model.EmailAddress,
+            Password = _model.Password,
+            ConfirmPassword = _model.ConfirmPassword
+        }, CancellationToken);
+
+        if (response.Success)
+        {
+            NavigationManager.NavigateTo("/");
+            Snackbar.Add("Registration successful!", Severity.Success);
+            return;
+        }
+
+        Snackbar.Add(string.Join(",", response.Errors.Select(x => x.ErrorMessage)), Severity.Error);
     }
 
-    public class RegisterModel
+    public class RegisterEditModel
     {
         [Required(ErrorMessage = "First name is required")]
         public string FirstName { get; set; }

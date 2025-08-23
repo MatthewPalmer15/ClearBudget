@@ -1,6 +1,6 @@
 ﻿@page "/register"
+@rendermode InteractiveServer
 @inherits CustomServerComponent
-@inject ISnackbar Snackbar
 
 <div class="flex justify-center items-center min-h-screen bg-gray-100">
     <MudPaper Class="w-full max-w-md p-10 rounded-3xl shadow-xl bg-white">
@@ -14,56 +14,56 @@
             </MudText>
 
             <!-- Registration Form -->
-            <EditForm Model="@registerModel" OnValidSubmit="HandleValidSubmit">
+            <EditForm Model="@_model" OnValidSubmit="OnRegisterFormSubmit" FormName="RegisterForm">
                 <DataAnnotationsValidator />
                 <MudStack Spacing="3" Class="mt-4">
 
-                    <MudTextField @bind-Value="registerModel.FirstName"
+                    <MudTextField @bind-Value="_model.FirstName"
+                                  For="@(() => _model.FirstName)"
                                   Label="First Name"
-                                  For="@(() => registerModel.FirstName)"
                                   Required="true"
                                   RequiredError="First name is required"
                                   Variant="Variant.Outlined"
                                   FullWidth="true"
-                                  Margin="Margin.Dense" />
+                                  Margin="Margin.Dense"/>
 
-                    <MudTextField @bind-Value="registerModel.LastName"
+                    <MudTextField @bind-Value="_model.LastName"
+                                  For="@(() => _model.LastName)"
                                   Label="Last Name"
-                                  For="@(() => registerModel.LastName)"
                                   Required="true"
                                   RequiredError="Last name is required"
                                   Variant="Variant.Outlined"
                                   FullWidth="true"
-                                  Margin="Margin.Dense" />
+                                  Margin="Margin.Dense"/>
 
-                    <MudTextField @bind-Value="registerModel.EmailAddress"
+                    <MudTextField @bind-Value="_model.EmailAddress"
+                                  For="@(() => _model.EmailAddress)"
                                   Label="Email Address"
-                                  For="@(() => registerModel.EmailAddress)"
                                   Required="true"
                                   RequiredError="Email is required"
                                   Variant="Variant.Outlined"
                                   FullWidth="true"
-                                  Margin="Margin.Dense" />
+                                  Margin="Margin.Dense"/>
 
-                    <MudTextField @bind-Value="registerModel.Password"
+                    <MudTextField @bind-Value="_model.Password"
+                                  For="@(() => _model.Password)"
                                   Label="Password"
                                   InputType="InputType.Password"
-                                  For="@(() => registerModel.Password)"
                                   Required="true"
                                   RequiredError="Password is required"
                                   Variant="Variant.Outlined"
                                   FullWidth="true"
-                                  Margin="Margin.Dense" />
+                                  Margin="Margin.Dense"/>
 
-                    <MudTextField @bind-Value="registerModel.ConfirmPassword"
+                    <MudTextField @bind-Value="_model.ConfirmPassword"
+                                  For="@(() => _model.ConfirmPassword)"
                                   Label="Confirm Password"
                                   InputType="InputType.Password"
-                                  For="@(() => registerModel.ConfirmPassword)"
                                   Required="true"
                                   RequiredError="Please confirm your password"
                                   Variant="Variant.Outlined"
                                   FullWidth="true"
-                                  Margin="Margin.Dense" />
+                                  Margin="Margin.Dense"/>
                 </MudStack>
 
                 <!-- Submit Button -->
