@@ -1,6 +1,6 @@
 ﻿namespace ClearBudget.Web.Components.Pages;
 
-public partial class Home : CustomComponentBase
+public partial class Home : CustomServerComponent
 {
 
 }

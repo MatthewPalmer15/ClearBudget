@@ -1,6 +1,5 @@
 ﻿@page "/login"
-@using System.ComponentModel.DataAnnotations
-@inject ISnackbar Snackbar
+@inherits CustomServerComponent
 @inject NavigationManager Navigation
 
 <div class="flex justify-center items-center min-h-screen bg-gray-100">
@@ -59,21 +58,3 @@
         </MudStack>
     </MudPaper>
 </div>
-
-@code {
-    private LoginModel loginModel = new();
-
-    private void HandleValidSubmit()
-    {
-        Navigation.NavigateTo("/");
-    }
-
-    public class LoginModel
-    {
-        [Required, EmailAddress]
-        public string Email { get; set; } = string.Empty;
-
-        [Required]
-        public string Password { get; set; } = string.Empty;
-    }
-}
