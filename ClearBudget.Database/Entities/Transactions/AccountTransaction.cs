@@ -7,7 +7,8 @@ public class AccountTransaction : BaseEntity<Guid>
         Unknown,
         Income,
         Outcome,
-        Interest
+        Interest,
+        Tax
     }
 
     public enum TransactionRecurringTypeEnum

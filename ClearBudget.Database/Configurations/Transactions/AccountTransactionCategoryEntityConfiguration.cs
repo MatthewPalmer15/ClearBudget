@@ -10,6 +10,15 @@ internal class AccountTransactionCategoryEntityConfiguration : IEntityTypeConfig
     public void Configure(EntityTypeBuilder<AccountTransactionCategory> builder)
     {
         builder.ConfigureBaseProperties();
+
+        builder.Property(x => x.ParentId)
+            .IsRequired(false);
+
+        builder.HasOne(x => x.Parent)
+            .WithMany()
+            .HasForeignKey(x => x.ParentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.Property(x => x.Title)
             .HasMaxLength(200)
             .IsRequired();
