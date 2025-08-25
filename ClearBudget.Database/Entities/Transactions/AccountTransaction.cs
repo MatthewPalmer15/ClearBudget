@@ -30,6 +30,9 @@ public class AccountTransaction : BaseEntity<Guid>
     public TransactionRecurringTypeEnum Recurring { get; set; }
     public int? RecurringCustomDays { get; set; }
 
+    public int Rank { get; set; }
+    public bool? Essential { get; set; }
+
     public Guid? CategoryId { get; set; }
     public virtual AccountTransactionCategory? Category { get; set; }
 }
