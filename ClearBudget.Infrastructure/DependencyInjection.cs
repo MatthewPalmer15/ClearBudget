@@ -1,4 +1,6 @@
-﻿using ClearBudget.Infrastructure.Encryption;
+﻿using Blazored.LocalStorage;
+using Blazored.SessionStorage;
+using ClearBudget.Infrastructure.Encryption;
 using ClearBudget.Infrastructure.MediatR.Pipelines;
 using ClearBudget.Infrastructure.Services.Caching;
 using ClearBudget.Infrastructure.Services.Cookie;
@@ -43,6 +45,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDapperContext, DapperContext>();
 
         // services.AddScoped<IEmailSender, EmailSender>(); TODO: NEED TO TEST BEFORE UNCOMMENTING
+
+        services.AddBlazoredLocalStorage();
+        services.AddBlazoredSessionStorage();
         return services;
     }
 }

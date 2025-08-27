@@ -1,73 +1,107 @@
-﻿using ClearBudget.Application.Client.Queries;
+﻿using Blazored.LocalStorage;
+using ClearBudget.Application.Client.Queries;
 using ClearBudget.Database.Entities.Client;
+using ClearBudget.Infrastructure.Extensions;
+using ClearBudget.Infrastructure.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
+using System.Net.Http.Json;
 using System.Security.Claims;
-using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
-using ICookieManager = ClearBudget.Infrastructure.Services.Cookie.ICookieManager;
 
 
 namespace ClearBudget.Application.Services;
 
+public sealed record CurrentUserDto
+{
+    public Guid Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string EmailAddress { get; set; }
+    public bool IsAuthenticated { get; set; }
+}
+
 public interface ICurrentUserService
 {
-    Task<ClientUser?> GetAsync();
-    Task<ClaimsPrincipal?> GetPrincipalAsync();
-    Task<bool> IsAuthenticatedAsync();
-    string? GetIpAddress();
-    Task<bool> SignInAsync(ClientUser clientUser);
-    Task SignOutAsync();
-    Task<bool> HasClaimAsync(string type, string value);
-    Task<bool> IsInRoleAsync(string name);
+    Task<CurrentUserDto> GetAsync(CancellationToken cancellationToken = default);
+    Task<bool> SignInAsync(ClientUser clientUser, CancellationToken cancellationToken = default);
+    Task SignOutAsync(CancellationToken cancellationToken = default);
+    Task<bool> HasClaimAsync(string type, string value, CancellationToken cancellationToken = default);
+    Task<bool> IsInRoleAsync(string roleName, CancellationToken cancellationToken = default);
 }
 
 public class CurrentUserService(IMediator mediator,
-    ICookieManager cookieManager,
     IHttpContextAccessor httpContextAccessor,
-    HttpClient httpClient,
-    AuthenticationStateProvider authenticationStateProvider) : ICurrentUserService
+    ILocalStorageService localStorageService,
+    HttpClient httpClient) : ICurrentUserService
 {
-
-    public async Task<ClientUser?> GetAsync()
+    public async Task<CurrentUserDto> GetAsync(CancellationToken cancellationToken = default)
     {
-        var principal = await authenticationStateProvider.GetAuthenticationStateAsync();
+        CurrentUserDto? user;
+        if (OperatingSystem.IsBrowser())
+        {
+            user = await localStorageService.TryGetItemAsync<CurrentUserDto>("CurrentUser:v1", cancellationToken);
+            if (user != null) return user;
 
-        var user = ToClientUser(principal.User);
-        if (user == null) return null;
+            var httpResponse = await httpClient.GetAsync("/api/auth/get", cancellationToken);
+            if (httpResponse.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+            {
+                await localStorageService.TryRemoveItemAsync("CurrentUser:v1", cancellationToken);
+                return new CurrentUserDto { IsAuthenticated = false };
+            }
 
-        var authenticationToken = cookieManager.Get("AuthenticationToken");
-        if (!string.IsNullOrWhiteSpace(authenticationToken) && user.AuthenticationToken != authenticationToken) return null;
-        return user;
+            if (!httpResponse.IsSuccessStatusCode) return new CurrentUserDto { IsAuthenticated = false }; ;
+
+            user = await httpResponse.Content.ReadFromJsonAsync<CurrentUserDto?>(cancellationToken);
+            if (user == null)
+                return new CurrentUserDto { IsAuthenticated = false };
+
+            await localStorageService.TrySetItemAsync("CurrentUser:v1", user, cancellationToken);
+            return user;
+        }
+
+        var userPrincipal = httpContextAccessor.HttpContext.User;
+        if (userPrincipal is null || !(userPrincipal.Identity?.IsAuthenticated ?? false)) return new CurrentUserDto { IsAuthenticated = false }; ;
+
+        var claimNameIdentifier = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(claimNameIdentifier, out var clientUserId))
+            return new CurrentUserDto { IsAuthenticated = false }; ;
+
+        return new CurrentUserDto
+        {
+            Id = clientUserId,
+            FirstName = userPrincipal.FindFirst("FirstName")?.Value ?? "",
+            LastName = userPrincipal.FindFirst("LastName")?.Value ?? "",
+            EmailAddress = userPrincipal.FindFirst(ClaimTypes.Email)?.Value ?? userPrincipal.FindFirst(ClaimTypes.Name)?.Value ?? "",
+            IsAuthenticated = true
+        };
     }
 
-    public async Task<ClaimsPrincipal?> GetPrincipalAsync()
+    public async Task<bool> SignInAsync(ClientUser clientUser, CancellationToken cancellationToken = default)
     {
-        var principal = await authenticationStateProvider.GetAuthenticationStateAsync();
-        if (!(principal.User?.Identity?.IsAuthenticated ?? false)) return null;
-        return principal.User;
-    }
+        if (OperatingSystem.IsBrowser())
+        {
+            var currentUser = await localStorageService.TryGetItemAsync<ClientUser>("CurrentUser", cancellationToken);
+            if (currentUser != null) return false; // Already logged in.
 
-    public async Task<bool> IsAuthenticatedAsync()
-    {
-        var principal = await authenticationStateProvider.GetAuthenticationStateAsync();
-        return !(principal.User?.Identity?.IsAuthenticated ?? false);
-    }
+            var httpResponse = await httpClient.PostAsJsonAsync("/api/auth/login", new
+            {
+                clientUser.EmailAddress,
+                clientUser.AuthenticationToken
+            }, cancellationToken);
 
-    public string? GetIpAddress()
-    {
-        return httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-    }
+            if (!httpResponse.IsSuccessStatusCode) return false;
 
-    public async Task<bool> SignInAsync(ClientUser clientUser)
-    {
+            var result = await httpResponse.Content.ReadFromJsonAsync<BaseResponse>(cancellationToken);
+            return result?.Success ?? false;
+        }
+
         if (httpContextAccessor?.HttpContext is null) return false;
         if (clientUser == null || string.IsNullOrWhiteSpace(clientUser.AuthenticationToken)) return false;
 
-        var claimsResult = await mediator.Send(new GetClientUserClaimsQuery { ClientUserId = clientUser.Id });
-        var rolesResult = await mediator.Send(new GetClientUserRolesQuery { ClientUserId = clientUser.Id });
+        var claimsResult = await mediator.Send(new GetClientUserClaimsQuery { ClientUserId = clientUser.Id }, cancellationToken);
+        var rolesResult = await mediator.Send(new GetClientUserRolesQuery { ClientUserId = clientUser.Id }, cancellationToken);
 
         var userIdentity = new ClaimsIdentity("CurrentUser_Core", ClaimTypes.Name, ClaimTypes.Role);
         userIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, clientUser.Id.ToString()));
@@ -91,7 +125,7 @@ public class CurrentUserService(IMediator mediator,
         var userPrincipal = new ClaimsPrincipal([userIdentity, authIdentity]);
 
         if (httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false)
-            await SignOutAsync();
+            await SignOutAsync(cancellationToken);
 
         await httpContextAccessor.HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
@@ -104,47 +138,64 @@ public class CurrentUserService(IMediator mediator,
                 IssuedUtc = DateTime.UtcNow
             });
 
-        cookieManager.Add("CurrentUser_AuthenticationToken", clientUser.AuthenticationToken, TimeSpan.FromDays(30), SameSiteMode.Strict, true);
         return true;
     }
 
-    public async Task SignOutAsync()
+    public async Task SignOutAsync(CancellationToken cancellationToken = default)
     {
-        cookieManager.Delete("CurrentUser_AuthenticationToken");
+        if (OperatingSystem.IsBrowser())
+        {
+            await localStorageService.TryRemoveItemAsync("CurrentUser", cancellationToken);
+            await httpClient.PostAsync("/api/auth/logout", null, cancellationToken);
+            return;
+        }
+
         await httpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     }
 
-    public async Task<bool> HasClaimAsync(string type, string value)
+    public async Task<bool> HasClaimAsync(string type, string value, CancellationToken cancellationToken = default)
     {
-        var principal = await authenticationStateProvider.GetAuthenticationStateAsync();
-        if (principal.User.Identity?.IsAuthenticated ?? false) return false;
-        return principal.User.HasClaim(type, value);
-    }
-    public async Task<bool> IsInRoleAsync(string name)
-    {
-        var principal = await authenticationStateProvider.GetAuthenticationStateAsync();
-        if (principal.User.Identity?.IsAuthenticated ?? false) return false;
-        return principal.User.IsInRole(name);
-    }
-
-    private static ClientUser? ToClientUser(ClaimsPrincipal? p)
-    {
-        if (p?.Identity?.IsAuthenticated != true)
-            return null;
-
-        // You stored Id as ClaimTypes.NameIdentifier
-        var id = p.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!Guid.TryParse(id, out var gid))
-            return null;
-
-        return new ClientUser
+        if (OperatingSystem.IsBrowser())
         {
-            Id = gid,
-            EmailAddress = p.FindFirst(ClaimTypes.Email)?.Value ?? p.FindFirst(ClaimTypes.Name)?.Value ?? "",
-            Forename = p.FindFirst("FirstName")?.Value ?? "",
-            Surname = p.FindFirst("LastName")?.Value ?? "",
-            AuthenticationToken = p.FindFirst("AuthenticationToken")?.Value
-        };
+            var httpResponse = await httpClient.PostAsJsonAsync("/api/auth/hasclaim", new { type, value }, cancellationToken);
+            if (httpResponse.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+            {
+                await localStorageService.TryRemoveItemAsync("CurrentUser", cancellationToken);
+                return false;
+            }
+
+            if (!httpResponse.IsSuccessStatusCode) return false;
+
+            var response = await httpResponse.Content.ReadFromJsonAsync<bool>(cancellationToken);
+            return response;
+        }
+
+        var userPrincipal = httpContextAccessor.HttpContext.User;
+        if (!(userPrincipal.Identity?.IsAuthenticated ?? false)) return false;
+
+        return userPrincipal.HasClaim(type, value);
     }
 
+    public async Task<bool> IsInRoleAsync(string roleName, CancellationToken cancellationToken = default)
+    {
+        if (OperatingSystem.IsBrowser())
+        {
+            var httpResponse = await httpClient.PostAsJsonAsync("/api/auth/isinrole", new { roleName }, cancellationToken);
+            if (httpResponse.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+            {
+                await localStorageService.TryRemoveItemAsync("CurrentUser", cancellationToken);
+                return false;
+            }
+
+            if (!httpResponse.IsSuccessStatusCode) return false;
+
+            var response = await httpResponse.Content.ReadFromJsonAsync<bool>(cancellationToken);
+            return response;
+        }
+
+        var userPrincipal = httpContextAccessor.HttpContext.User;
+        if (!(userPrincipal.Identity?.IsAuthenticated ?? false)) return false;
+
+        return userPrincipal.IsInRole(roleName);
+    }
 }

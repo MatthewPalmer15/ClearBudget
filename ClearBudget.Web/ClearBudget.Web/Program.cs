@@ -1,6 +1,7 @@
 using ClearBudget.Application;
 using ClearBudget.Database;
 using ClearBudget.Web.Components;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components;
 using MudBlazor.Services;
 
@@ -26,7 +27,7 @@ builder.Services.AddScoped(sp =>
     return new HttpClient { BaseAddress = new Uri(nav.BaseUri) };
 });
 builder.Services.AddAuthentication()
-    .AddCookie("Cookies", options =>
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
         options.LoginPath = "/login";
         options.LogoutPath = "/logout";
