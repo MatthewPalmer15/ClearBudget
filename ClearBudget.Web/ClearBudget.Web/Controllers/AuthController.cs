@@ -10,7 +10,6 @@ namespace ClearBudget.Web.Controllers;
 [Route("api/[controller]")]
 public class AuthController(ICurrentUserService currentUserService, IEncryptionService encryptionService) : CustomController
 {
-    [Authorize]
     [HttpGet("get")]
     public async Task<JsonResult> Get(CancellationToken cancellationToken = default)
     {

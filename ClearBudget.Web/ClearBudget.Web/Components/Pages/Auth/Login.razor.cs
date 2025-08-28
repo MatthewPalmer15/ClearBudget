@@ -1,4 +1,4 @@
-﻿using ClearBudget.Application.Client.Commands;
+﻿using ClearBudget.Application.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using System.ComponentModel.DataAnnotations;
@@ -9,25 +9,21 @@ public partial class Login : CustomServerComponent
 {
     [Inject] public ISnackbar Snackbar { get; set; }
     [Inject] public NavigationManager NavigationManager { get; set; }
+    [Inject] public ICurrentUserService CurrentUserService { get; set; }
 
     private LoginEditModel _model = new();
 
     private async Task OnLoginFormSubmit()
     {
-        var response = await Mediator.Send(new LoginUserCommand
+        var hasSuccessfullyLoggedIn = await CurrentUserService.SignInAsync(_model.EmailAddress, _model.Password, CancellationToken);
+        if (hasSuccessfullyLoggedIn)
         {
-            EmailAddress = _model.EmailAddress,
-            Password = _model.Password,
-        }, CancellationToken);
-
-        if (response.Success)
-        {
-            NavigationManager.NavigateTo("/");
+            NavigationManager.NavigateTo("/", forceLoad: true);
             Snackbar.Add("Login successful!", Severity.Success);
             return;
         }
 
-        Snackbar.Add(string.Join(",", response.Errors.Select(x => x.ErrorMessage)), Severity.Error);
+        Snackbar.Add("Failed to log in", Severity.Error);
     }
 
     public class LoginEditModel

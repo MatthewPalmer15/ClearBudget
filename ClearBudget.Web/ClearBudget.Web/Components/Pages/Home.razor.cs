@@ -8,9 +8,8 @@ public partial class Home : CustomServerComponent
     [Inject]
     public ICurrentUserService CurrentUserService { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         var currentUser = await CurrentUserService.GetAsync();
     }
-
 }

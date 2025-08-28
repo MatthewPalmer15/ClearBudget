@@ -1,11 +1,15 @@
-﻿using ClearBudget.Application.Services;
+﻿using ClearBudget.Application.Client.Queries;
 using ClearBudget.Database;
 using ClearBudget.Database.Entities.Client;
 using ClearBudget.Infrastructure.Models;
 using ClearBudget.Infrastructure.Services.Hash;
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Security.Cryptography;
 
 namespace ClearBudget.Application.Client.Commands;
@@ -16,7 +20,8 @@ public class LoginUserCommand : IRequest<BaseResponse>
     public string Password { get; set; }
 
     internal class Handler(
-        ICurrentUserService currentUserService,
+        IMediator mediator,
+        IHttpContextAccessor httpContextAccessor,
         IDbContext context,
         IHashService hashService) : IRequestHandler<LoginUserCommand, BaseResponse>
     {
@@ -44,7 +49,42 @@ public class LoginUserCommand : IRequest<BaseResponse>
             context.ClientUsers.Update(user);
             await context.SaveChangesAsync(cancellationToken);
 
-            await currentUserService.SignInAsync(user);
+            if (httpContextAccessor?.HttpContext is null) return BaseResponse.Failed("Cannot log user in");
+
+            var claimsResult = await mediator.Send(new GetClientUserClaimsQuery { ClientUserId = user.Id }, cancellationToken);
+            var rolesResult = await mediator.Send(new GetClientUserRolesQuery { ClientUserId = user.Id }, cancellationToken);
+
+            var userIdentity = new ClaimsIdentity("CurrentUser_Core", ClaimTypes.Name, ClaimTypes.Role);
+            userIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
+            userIdentity.AddClaim(new Claim(ClaimTypes.Name, user.EmailAddress));
+            userIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddress));
+            userIdentity.AddClaim(new Claim("AuthenticationToken", user.AuthenticationToken));
+            userIdentity.AddClaim(new Claim("FirstName", user.Forename));
+            userIdentity.AddClaim(new Claim("LastName", user.Surname));
+
+            var authIdentity = new ClaimsIdentity("CurrentUser_Authentication", ClaimTypes.Name, ClaimTypes.Role);
+            foreach (var claim in claimsResult.Claims.DistinctBy(x => x.Type))
+            {
+                authIdentity.AddClaim(new Claim(claim.Type, claim.Value));
+            }
+
+            foreach (var role in rolesResult.Roles.DistinctBy(x => x.Title))
+            {
+                authIdentity.AddClaim(new Claim(ClaimTypes.Role, role.Title));
+            }
+
+            var userPrincipal = new ClaimsPrincipal([userIdentity, authIdentity]);
+
+            await httpContextAccessor.HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                userPrincipal,
+                new AuthenticationProperties
+                {
+                    ExpiresUtc = DateTime.UtcNow.AddHours(8),
+                    IsPersistent = true,
+                    AllowRefresh = true,
+                    IssuedUtc = DateTime.UtcNow
+                });
             return BaseResponse.Succeeded();
         }
 

@@ -2,7 +2,7 @@ using ClearBudget.Application;
 using ClearBudget.Database;
 using ClearBudget.Web.Components;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.DataProtection;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,29 +23,56 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped(sp =>
 {
-    var nav = sp.GetRequiredService<NavigationManager>();
-    return new HttpClient { BaseAddress = new Uri(nav.BaseUri) };
+    var nav = sp.GetService<Microsoft.AspNetCore.Components.NavigationManager>();
+    if (nav is not null)
+    {
+        try
+        {
+            var baseUri = nav.BaseUri;          // will throw if not initialized
+            return new HttpClient { BaseAddress = new Uri(baseUri) };
+        }
+        catch (InvalidOperationException)
+        {
+            // RemoteNavigationManager not initialized yet; fall through
+        }
+    }
+
+    var http = sp.GetService<IHttpContextAccessor>()?.HttpContext;
+    if (http is not null && http.Request.Host.HasValue)
+    {
+        var origin = $"{http.Request.Scheme}://{http.Request.Host}/";
+        return new HttpClient { BaseAddress = new Uri(origin) };
+    }
+
+    return sp.GetRequiredService<IHttpClientFactory>().CreateClient();
 });
-builder.Services.AddAuthentication()
+
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
+        options.Cookie.Name = ".ClearBudget.Auth";
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.LoginPath = "/login";
         options.LogoutPath = "/logout";
         options.AccessDeniedPath = "/forbidden";
         options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
-builder.Services.AddAuthorization();
 
+builder.Services.AddAuthorization();
 
 builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddMudServices();
+builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dpkeys")));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
-
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -63,11 +90,11 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
-app.MapControllers();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
