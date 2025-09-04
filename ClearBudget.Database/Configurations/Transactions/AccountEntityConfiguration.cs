@@ -11,14 +11,14 @@ internal class AccountEntityConfiguration : IEntityTypeConfiguration<Account>
     {
         builder.ConfigureBaseProperties();
 
-        builder.Property(e => e.ClientUserId)
-            .IsRequired();
+        //builder.Property(e => e.ClientUserId)
+        //    .IsRequired();
 
-        builder.HasOne(o => o.ClientUser)
-            .WithMany()
-            .HasForeignKey(o => o.ClientUserId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Restrict);
+        //builder.HasOne(o => o.ClientUser)
+        //    .WithMany()
+        //    .HasForeignKey(o => o.ClientUserId)
+        //    .IsRequired()
+        //    .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.DateCreated)
             .HasDefaultValueSql("GETUTCDATE()")
@@ -35,10 +35,10 @@ internal class AccountEntityConfiguration : IEntityTypeConfiguration<Account>
             .HasDefaultValue(0)
             .IsRequired();
 
-        builder.HasMany(a => a.Transactions)
-            .WithOne(t => t.Account)
-            .HasForeignKey(t => t.AccountId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
+        //builder.HasMany(a => a.Transactions)
+        //    .WithOne(t => t.Account)
+        //    .HasForeignKey(t => t.AccountId)
+        //    .IsRequired()
+        //    .OnDelete(DeleteBehavior.Cascade);
     }
 }
