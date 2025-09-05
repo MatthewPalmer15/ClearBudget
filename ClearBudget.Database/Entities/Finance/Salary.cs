@@ -26,7 +26,6 @@ namespace PersonalFinance.Models
         public UKStudentLoanType? StudentLoanType { get; set; }
 
         // Pension Contributions
-        public bool ContributesToPension { get; set; }
         public decimal? PensionContributionPercentage { get; set; }
 
         // Overtime and Bonus

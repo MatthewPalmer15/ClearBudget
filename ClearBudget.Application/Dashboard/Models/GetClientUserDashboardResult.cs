@@ -6,6 +6,7 @@ public class GetClientUserDashboardResult
 {
     public List<Account> accounts { get; set; } = [];
     public AccountOverview accountOverview { get; set; } = new AccountOverview();
+    
     public class Account
     {
         public string Title { get; set; }
