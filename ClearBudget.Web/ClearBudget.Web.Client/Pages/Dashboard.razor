@@ -6,10 +6,10 @@
 
 <PageTitle>Money Management</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-8">
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-3">
     <!-- Header -->
-    <MudStack Spacing="1" Class="mb-6">
-        <MudText Typo="Typo.h4" FontWeight="FontWeight.Bold">My Money Management Dashboard</MudText>
+    <MudStack Spacing="1" Class="mb-6 text-center md:text-left">
+        <MudText Typo="Typo.h4" FontWeight="FontWeight.Bold">My Money Management</MudText>
         <MudText Typo="Typo.subtitle1" Color="Color.Secondary">
             Track your accounts and earnings at a glance
         </MudText>
@@ -18,7 +18,7 @@
     @if (Model == null)
     {
         <!-- Loading State -->
-        <MudStack AlignItems="AlignItems.Center" JustifyContent="AlignItems.Center" Class="py-12">
+        <MudStack AlignItems="AlignItems.Center" JustifyContent="Center" Class="py-16">
             <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
             <MudText Typo="Typo.body2" Class="mt-3" Color="Color.Secondary">
                 <em>Loading dashboard...</em>
@@ -33,19 +33,20 @@
                 <MudStack Spacing="2" Class="mb-3">
                     <MudText Typo="Typo.h6" FontWeight="FontWeight.Medium">Accounts</MudText>
                 </MudStack>
+
                 <MudGrid GutterSize="3">
                     @foreach (var account in Model.accounts)
                     {
                         <MudItem xs="12" sm="6" md="4">
-                            <MudCard Elevation="2" Class="h-100 rounded-xl">
+                            <MudCard Elevation="3" Class="h-100 rounded-xl hover:shadow-lg transition-all">
                                 <MudCardHeader>
                                     <MudText Typo="Typo.subtitle1" FontWeight="FontWeight.Bold">@account.Title</MudText>
                                 </MudCardHeader>
                                 <MudDivider />
                                 <MudCardContent>
                                     <MudStack Spacing="1" Class="pt-2">
-                                        <MudText Typo="Typo.body2"><b>Gross Money:</b> @account.GrossAmount.ToString("C")</MudText>
-                                        <MudText Typo="Typo.body2"><b>Interest Rate:</b> @($"{account.InterestRate:F2}%")</MudText>
+                                        <MudText Typo="Typo.body2"><b>Gross:</b> @account.GrossAmount.ToString("C")</MudText>
+                                        <MudText Typo="Typo.body2"><b>Rate:</b> @($"{account.InterestRate:F2}%")</MudText>
                                         <MudText Typo="Typo.body2"><b>Earnings:</b> @account.InterestAmount.ToString("C")</MudText>
                                         <MudText Typo="Typo.body2"><b>Net:</b> @account.NetAmount.ToString("C")</MudText>
                                     </MudStack>
@@ -55,7 +56,8 @@
                     }
                 </MudGrid>
 
-                <MudCard Elevation="2" Class="mb-4 rounded-xl">
+                <!-- Accounts Overview -->
+                <MudCard Elevation="3" Class="mt-4 rounded-xl">
                     <MudCardContent>
                         <MudText Typo="Typo.subtitle2" Class="mb-2" FontWeight="FontWeight.Medium">
                             Accounts Overview
@@ -63,8 +65,7 @@
                         <MudChart ChartType="ChartType.Pie"
                                   InputLabels="@Model.accounts.Select(a => $"{a.Title} ({a.NetAmount:C})").ToArray()"
                                   InputData="@Model.accounts.Select(a => (double)a.NetAmount).ToArray()"
-                                  Class="h-40" />
-
+                                  Class="h-56" />
                     </MudCardContent>
                 </MudCard>
             </MudItem>
@@ -76,107 +77,32 @@
                 </MudStack>
 
                 <MudGrid GutterSize="2">
-                    <!-- Saving Total -->
-                    <MudItem xs="12">
-                        <MudCard Elevation="2" Class="rounded-xl">
-                            <MudCardContent>
-                                <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Primary" Size="Size.Large" />
-                                    <MudStack>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Saving Total</MudText>
-                                        <MudText Typo="Typo.h6" FontWeight="FontWeight.Bold">
-                                            @Model.accountOverview.SavingsTotal.ToString("C")
-                                        </MudText>
+                    @foreach (var card in new[]
+                                    {
+                                new { Icon = Icons.Material.Filled.AccountBalance, Color = Color.Primary, Label = "Saving Total", Value = Model.accountOverview.SavingsTotal },
+                                new { Icon = Icons.Material.Filled.TrendingUp, Color = Color.Success, Label = "Investment Saving", Value = Model.accountOverview.InvestmentsTotal },
+                                new { Icon = Icons.Material.Filled.Category, Color = Color.Secondary, Label = "Other", Value = Model.accountOverview.OtherTotal },
+                                new { Icon = Icons.Material.Filled.PieChart, Color = Color.Info, Label = "Total Right Now", Value = Model.accountOverview.Total },
+                                new { Icon = Icons.Material.Filled.CalendarToday, Color = Color.Success, Label = "Net (1 Year)", Value = Model.accountOverview.FutureTotal },
+                                new { Icon = Icons.Material.Filled.ShowChart, Color = Color.Warning, Label = "Net Plus Work", Value = Model.accountOverview.FutureTotal + 10000 }
+                                })
+                    {
+                        <MudItem xs="12">
+                            <MudCard Elevation="3" Class="rounded-xl hover:shadow-lg transition-all">
+                                <MudCardContent>
+                                    <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudIcon Icon="@card.Icon" Color="@card.Color" Size="Size.Large" />
+                                        <MudStack>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@card.Label</MudText>
+                                            <MudText Typo="Typo.h6" FontWeight="FontWeight.Bold">
+                                                @card.Value.ToString("C")
+                                            </MudText>
+                                        </MudStack>
                                     </MudStack>
-                                </MudStack>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-
-                    <!-- Investments -->
-                    <MudItem xs="12">
-                        <MudCard Elevation="2" Class="rounded-xl">
-                            <MudCardContent>
-                                <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Success" Size="Size.Large" />
-                                    <MudStack>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Investment Saving</MudText>
-                                        <MudText Typo="Typo.h6" FontWeight="FontWeight.Bold">
-                                            @Model.accountOverview.InvestmentsTotal.ToString("C")
-                                        </MudText>
-                                    </MudStack>
-                                </MudStack>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-
-                    <!-- Other -->
-                    <MudItem xs="12">
-                        <MudCard Elevation="2" Class="rounded-xl">
-                            <MudCardContent>
-                                <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudIcon Icon="@Icons.Material.Filled.Category" Color="Color.Secondary" Size="Size.Large" />
-                                    <MudStack>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Other</MudText>
-                                        <MudText Typo="Typo.h6" FontWeight="FontWeight.Bold">
-                                            @Model.accountOverview.OtherTotal.ToString("C")
-                                        </MudText>
-                                    </MudStack>
-                                </MudStack>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-
-                    <!-- Totals -->
-                    <MudItem xs="12">
-                        <MudCard Elevation="2" Class="rounded-xl">
-                            <MudCardContent>
-                                <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudIcon Icon="@Icons.Material.Filled.PieChart" Color="Color.Info" Size="Size.Large" />
-                                    <MudStack>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Total Right Now</MudText>
-                                        <MudText Typo="Typo.h6" FontWeight="FontWeight.Bold">
-                                            @Model.accountOverview.Total.ToString("C")
-                                        </MudText>
-                                    </MudStack>
-                                </MudStack>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-
-                    <!-- Future Net -->
-                    <MudItem xs="12">
-                        <MudCard Elevation="2" Class="rounded-xl">
-                            <MudCardContent>
-                                <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Color="Color.Success" Size="Size.Large" />
-                                    <MudStack>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Net (1 Year)</MudText>
-                                        <MudText Typo="Typo.h6" FontWeight="FontWeight.Bold">
-                                            @Model.accountOverview.FutureTotal.ToString("C")
-                                        </MudText>
-                                    </MudStack>
-                                </MudStack>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-
-                    <!-- Net Plus Work -->
-                    <MudItem xs="12">
-                        <MudCard Elevation="2" Class="rounded-xl">
-                            <MudCardContent>
-                                <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudIcon Icon="@Icons.Material.Filled.ShowChart" Color="Color.Warning" Size="Size.Large" />
-                                    <MudStack>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Net Plus Work</MudText>
-                                        <MudText Typo="Typo.h6" FontWeight="FontWeight.Bold">
-                                            @((Model.accountOverview.FutureTotal + 10000).ToString("C"))
-                                        </MudText>
-                                    </MudStack>
-                                </MudStack>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    }
                 </MudGrid>
             </MudItem>
         </MudGrid>
