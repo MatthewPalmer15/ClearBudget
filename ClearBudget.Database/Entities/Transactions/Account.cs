@@ -24,5 +24,4 @@ public class Account : BaseEntity<Guid>
     public decimal GrossAmount { get; set; }
     public decimal InterestRate { get; set; }
     public decimal NetAmount => GrossAmount * (1 + (InterestRate / 100));
-    //public virtual List<AccountTransaction> Transactions { get; set; }
 }

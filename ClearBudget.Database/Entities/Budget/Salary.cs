@@ -14,6 +14,10 @@ namespace PersonalFinance.Models
 
     public class Salary
     {
+        //Account Info
+        //public Guid AccountId { get; set; }
+        //public virtual Account Account { get; set; }
+
         // Core Salary Information
         public decimal GrossIncome { get; set; }
 
