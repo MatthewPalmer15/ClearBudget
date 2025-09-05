@@ -23,7 +23,7 @@ namespace PersonalFinance.Models
 
         // Student Loan Information
         public bool HasStudentLoan { get; set; }
-        public UKStudentLoanType? StudentLoanType { get; set; }
+        public List<UKStudentLoanType>? StudentLoanTypes { get; set; }
 
         // Pension Contributions
         public decimal? PensionContributionPercentage { get; set; }

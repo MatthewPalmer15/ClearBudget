@@ -4,17 +4,6 @@ namespace ClearBudget.Database.Entities.Transactions;
 
 public class Account : BaseEntity<Guid>
 {
-    public enum AccountTypeEnum
-    {
-        Debit,
-        Credit,
-        Savings,
-        CashIsa,
-        StocksAndSharesIsa,
-        LifetimeIsa,
-        Other
-    }
-
     //public Guid ClientUserId { get; set; }
     //public virtual ClientUser ClientUser { get; set; }
     public DateTime DateCreated { get; set; }

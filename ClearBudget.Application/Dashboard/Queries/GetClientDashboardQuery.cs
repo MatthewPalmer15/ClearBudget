@@ -25,7 +25,8 @@ public class GetClientUserDashboardQuery : IRequest<GetClientUserDashboardResult
                                           GrossAmount = a.GrossAmount,
                                           InterestRate = a.InterestRate,
                                           InterestAmount = a.GrossAmount * (1 + (a.InterestRate / 100m)),
-                                          NetAmount = a.NetAmount
+                                          NetAmount = a.NetAmount,
+                                          Type = a.Type
                                       }).ToListAsync(cancellationToken);
 
                 // Return empty result if no accounts
@@ -36,6 +37,10 @@ public class GetClientUserDashboardQuery : IRequest<GetClientUserDashboardResult
                         accounts = new List<GetClientUserDashboardResult.Account>(),
                         accountOverview = new GetClientUserDashboardResult.AccountOverview
                         {
+                            SavingsTotal = 0
+                            IsasTotal = 0 
+                            InvestmentsTotal = 0
+                            OtherTotal = 0
                             Total = 0,
                             FutureTotal = 0
                         }
@@ -45,7 +50,11 @@ public class GetClientUserDashboardQuery : IRequest<GetClientUserDashboardResult
                 // Build overview safely
                 var accountOverview = new GetClientUserDashboardResult.AccountOverview
                 {
-                    Total = accounts.Count(x => x.GrossAmount > 0m),
+                    SavingsTotal = accounts.Where(x => x.Type == (int)AccountTypeEnum.Savings).Count(x => x.GrossAmount > 0m);
+                    IsasTotal = accounts.Where(x => x.Type == (int)AccountTypeEnum.Isas).Count(x => x.GrossAmount > 0m);
+                    InvestmentsTotal = accounts.Where(x => x.Type == (int)AccountTypeEnum.Investments).Count(x => x.GrossAmount > 0m);
+                    OtherTotal = accounts.Where(x => x.Type == (int)AccountTypeEnum.Other).Count(x => x.GrossAmount > 0m);
+                    OtherTotal = accounts.Count(x => x.GrossAmount > 0m),
                     FutureTotal = accounts.Count(x => x.NetAmount > 0m)
                 };
 
@@ -112,6 +121,10 @@ public class GetClientUserDashboardQuery : IRequest<GetClientUserDashboardResult
                 },
                     accountOverview = new GetClientUserDashboardResult.AccountOverview
                     {
+                        Savings = 25,
+                        Investments = 25
+                        Isa = 25,
+                        Other = 20,
                         Total = 454, // THIS IS WORKED OUT
                         FutureTotal = 466 //wroked out
                     }

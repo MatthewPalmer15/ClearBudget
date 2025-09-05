@@ -14,12 +14,19 @@ public class GetClientUserDashboardResult
         public decimal InterestRate { get; set; }
         public decimal InterestAmount { get; set; }
         public decimal NetAmount { get; set; }
+        public AccountTypeEnum Type { get; set; }
     }
 
     public class AccountOverview
     {
-        public int Total {  get; set; }
-        public int FutureTotal { get; set; }
+        public decimal SavingsTotal {  get; set; }
+        public decimal IsasTotal {  get; set; }
+        public decimal InvestmentsTotal {  get; set; }
+        public decimal OtherTotal {  get; set; }
+        public decimal Total {  get; set; }
+        public decimal FutureTotal { get; set; }
     }
+
+    
 }
 
