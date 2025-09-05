@@ -3,7 +3,7 @@
 public class GetClientFinanceResult
 {
    public Salary salary {get; set;}
-   public OutgoingCategory OutGoings {get; set;}
+   //public OutgoingCategory OutGoings {get; set;}
 }
 
 public class Salary

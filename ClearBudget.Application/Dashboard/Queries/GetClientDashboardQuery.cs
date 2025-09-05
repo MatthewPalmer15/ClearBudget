@@ -2,6 +2,7 @@
 using ClearBudget.Database;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using static ClearBudget.Database.Entities.Transactions.Account;
 
 namespace ClearBudget.Application.Dashboard.Queries;
 
@@ -37,10 +38,10 @@ public class GetClientUserDashboardQuery : IRequest<GetClientUserDashboardResult
                         accounts = new List<GetClientUserDashboardResult.Account>(),
                         accountOverview = new GetClientUserDashboardResult.AccountOverview
                         {
-                            SavingsTotal = 0
-                            IsasTotal = 0 
-                            InvestmentsTotal = 0
-                            OtherTotal = 0
+                            SavingsTotal = 0,
+                            IsasTotal = 0, 
+                            InvestmentsTotal = 0,
+                            OtherTotal = 0,
                             Total = 0,
                             FutureTotal = 0
                         }
@@ -50,11 +51,11 @@ public class GetClientUserDashboardQuery : IRequest<GetClientUserDashboardResult
                 // Build overview safely
                 var accountOverview = new GetClientUserDashboardResult.AccountOverview
                 {
-                    SavingsTotal = accounts.Where(x => x.Type == (int)AccountTypeEnum.Savings).Count(x => x.GrossAmount > 0m);
-                    IsasTotal = accounts.Where(x => x.Type == (int)AccountTypeEnum.Isas).Count(x => x.GrossAmount > 0m);
-                    InvestmentsTotal = accounts.Where(x => x.Type == (int)AccountTypeEnum.Investments).Count(x => x.GrossAmount > 0m);
-                    OtherTotal = accounts.Where(x => x.Type == (int)AccountTypeEnum.Other).Count(x => x.GrossAmount > 0m);
-                    OtherTotal = accounts.Count(x => x.GrossAmount > 0m),
+                    SavingsTotal = accounts.Where(x => x.Type == AccountTypeEnum.Savings).Count(x => x.GrossAmount > 0m),
+                    IsasTotal = accounts.Where(x => x.Type == AccountTypeEnum.Isas).Count(x => x.GrossAmount > 0m),
+                    InvestmentsTotal = accounts.Where(x => x.Type == AccountTypeEnum.Investments).Count(x => x.GrossAmount > 0m),
+                    OtherTotal = accounts.Where(x => x.Type == AccountTypeEnum.Other).Count(x => x.GrossAmount > 0m),
+                    Total = accounts.Count(x => x.GrossAmount > 0m),
                     FutureTotal = accounts.Count(x => x.NetAmount > 0m)
                 };
 
@@ -121,10 +122,10 @@ public class GetClientUserDashboardQuery : IRequest<GetClientUserDashboardResult
                 },
                     accountOverview = new GetClientUserDashboardResult.AccountOverview
                     {
-                        Savings = 25,
-                        Investments = 25
-                        Isa = 25,
-                        Other = 20,
+                        SavingsTotal = 25,
+                        InvestmentsTotal = 25,
+                        IsasTotal = 25,
+                        OtherTotal = 20,
                         Total = 454, // THIS IS WORKED OUT
                         FutureTotal = 466 //wroked out
                     }

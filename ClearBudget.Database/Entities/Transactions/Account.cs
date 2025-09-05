@@ -4,6 +4,14 @@ namespace ClearBudget.Database.Entities.Transactions;
 
 public class Account : BaseEntity<Guid>
 {
+    public enum AccountTypeEnum
+    {
+        Savings,
+        Isas,
+        Investments,
+        Other
+    }
+
     //public Guid ClientUserId { get; set; }
     //public virtual ClientUser ClientUser { get; set; }
     public DateTime DateCreated { get; set; }
